@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Awakening &amp; Dispersion - Interactive Map of the Three Great Faiths</title>
+  
+  <!-- Favicon & PWA App Icons -->
+  <link rel="icon" href="assets/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Awakening Map">
+
+  <!-- Google Fonts: Inter & Cinzel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Fullscreen Interactive Map Canvas -->
+  <div id="map"></div>
+
+  <!-- ========================================================================== -->
+  <!-- Top Navigation Bar & Global Controls -->
+  <!-- ========================================================================== -->
+  <header class="top-nav glass-panel">
+    <div class="brand-section">
+      <div class="brand-icon">🧭</div>
+      <div class="brand-title-group">
+        <h1>Awakening &amp; Dispersion</h1>
+        <p>Interactive Map of the Three Great Spiritual Journeys</p>
+      </div>
+    </div>
+
+    <!-- Religion Filter Tabs -->
+    <nav class="filter-tabs" role="tablist">
+      <button class="filter-btn active" data-religion="all" title="View all routes simultaneously">
+        <span>🌐</span> All Faiths
+      </button>
+      <button class="filter-btn" data-religion="buddhism" title="The Life of Gautama Buddha &amp; Ashoka">
+        <span>🟡</span> Buddhism (Buddha)
+      </button>
+      <button class="filter-btn" data-religion="christianity" title="The Ministry of Jesus Christ">
+        <span>🔴</span> Christianity (Jesus)
+      </button>
+      <button class="filter-btn" data-religion="islam" title="The Revelations of Prophet Muhammad">
+        <span>🟢</span> Islam (Muhammad)
+      </button>
+    </nav>
+
+    <!-- Global Utility Action Buttons -->
+    <div class="action-tools">
+      <button id="btnTourToggle" class="btn-tool" title="Auto-play chronological story tour">
+        <span>🎬</span> Story Tour
+      </button>
+      <!-- Music Player Widget with Sacred Soundscapes -->
+      <div id="bgmWidget" class="bgm-player-widget">
+        <button id="btnBgmToggle" class="btn-tool" title="Toggle ambient background soundscape">
+          <span id="bgmIcon">🎵</span>
+          <span id="bgmBtnText">BGM</span>
+          <span id="btnBgmChevron" title="Soundscape Options" style="font-size:0.65rem; opacity:0.8; margin-left:3px;">▾</span>
+          <div class="sound-wave mini" id="bgmWave" style="display:none;">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+        </button>
+
+        <!-- Dropdown Flyout for Soundscape Selection -->
+        <div id="bgmFlyout" class="bgm-flyout glass-panel">
+          <div class="bgm-flyout-header">
+            <span class="bgm-status-title">Sacred Soundscape</span>
+            <span id="bgmActiveTradition" class="religion-pill" style="background:#f59e0b; color:#1e1b18;">Auto</span>
+          </div>
+          <div class="bgm-track-info">
+            <div id="bgmTrackTitle" class="bgm-track-title">Tibetan Singing Bowl &amp; Zen Temple Ambiance</div>
+            <div id="bgmTrackStyle" class="bgm-track-style">Tibetan singing bowl, deep meditative drone, bansuri flute, temple ambiance, Zen tranquil</div>
+          </div>
+          <div class="bgm-controls-group">
+            <div class="bgm-vol-label">
+              <span>Volume</span>
+              <span id="bgmVolText">70%</span>
+            </div>
+            <input type="range" id="bgmVolumeSlider" class="bgm-vol-slider" min="0" max="1" step="0.05" value="0.7">
+          </div>
+          <div class="bgm-track-selector">
+            <button class="bgm-choice-btn active" data-track="auto">🔄 Auto (Sync with Active Faith / Story)</button>
+            <button class="bgm-choice-btn" data-track="buddhism">🟡 Buddhism (Singing Bowl &amp; Bansuri)</button>
+            <button class="bgm-choice-btn" data-track="christianity">🔴 Christianity (Gregorian Chant &amp; Cathedral)</button>
+            <button class="bgm-choice-btn" data-track="islam">🟢 Islam (A Cappella Nasheed &amp; Ney Flute)</button>
+          </div>
+        </div>
+      </div>
+      <button id="btnTileToggle" class="btn-tool" title="Switch map theme (Dark / Antique Light / OSM)">
+        <span>🗺️</span> Map Theme
+      </button>
+      <button id="btnOpenEditor" class="btn-tool btn-highlight" title="Add new locations or edit data directly">
+        <span>✏️</span> Edit Data
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================== -->
+  <!-- Floating Story Quick Card (Desktop Left) -->
+  <!-- ========================================================================== -->
+  <aside id="storyQuickCard" class="story-quick-card glass-panel">
+    <div class="quick-badge-row">
+      <span id="quickReligionBadge" class="religion-pill" style="background:#f59e0b; color:#1e1b18;">Buddhism</span>
+      <span id="quickStepCount" class="step-counter">Node 1 / 17</span>
+    </div>
+    <h2 id="quickTitle" class="quick-title">Bodh Gaya: Supreme Enlightenment</h2>
+    <div id="quickMeta" class="quick-meta">
+      <span>📍 Bodh Gaya, Bihar, India</span>
+      <span>•</span>
+      <span>c. 528 BCE</span>
+    </div>
+    <p id="quickSummary" class="quick-summary">
+      Sitting in steadfast meditation beneath the sacred Bodhi tree, Siddhartha attained complete awakening to become the Buddha.
+    </p>
+    <div class="quick-actions">
+      <button id="btnQuickDetail" class="btn-card-action primary">📖 Story &amp; Audio</button>
+      <button id="btnQuickFly" class="btn-card-action">🎯 Center Map</button>
+    </div>
+  </aside>
+
+  <!-- ========================================================================== -->
+  <!-- Bottom Timeline & Playback Controller -->
+  <!-- ========================================================================== -->
+  <footer class="bottom-timeline-bar glass-panel">
+    <div class="timeline-header-row">
+      <div class="timeline-info-left">
+        <span id="currentMarkerName" class="current-node-name">Selected: Bodh Gaya, India</span>
+        <span id="currentMarkerYear" class="current-node-year">c. 528 BCE</span>
+      </div>
+
+      <div class="playback-controls">
+        <button id="btnPrevNode" class="btn-ctrl" title="Previous Stop (Shortcut: ←)">◀</button>
+        <button id="btnPlayPauseTour" class="btn-ctrl btn-play-tour" title="Toggle Auto Tour">
+          <span id="playTourIcon">▶</span> <span id="playTourText">Auto Play Tour</span>
+        </button>
+        <button id="btnNextNode" class="btn-ctrl" title="Next Stop (Shortcut: →)">▶</button>
+      </div>
+    </div>
+
+    <!-- Interactive Slider & Historical Era Landmarks -->
+    <div class="timeline-slider-wrapper">
+      <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="16" value="2" step="1">
+      <div class="timeline-eras-row">
+        <span class="era-chip" data-step="0">6th c. BCE (Buddha's Birth)</span>
+        <span class="era-chip" data-step="6">3rd c. BCE (Ashoka Missions)</span>
+        <span class="era-chip" data-step="7">4 BCE – 1st c. CE (Jesus' Birth)</span>
+        <span class="era-chip" data-step="11">c. 30 CE (Crucifixion &amp; Resurrection)</span>
+        <span class="era-chip" data-step="12">610 CE (First Quranic Revelation)</span>
+        <span class="era-chip" data-step="16">632 CE (Farewell Sermon)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================== -->
+  <!-- Right Slide-out Drawer (Detailed Inspector & Multi-media Narration) -->
+  <!-- ========================================================================== -->
+  <div id="detailDrawer" class="detail-drawer glass-panel">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span id="drawerReligionBadge" class="religion-pill">Buddhism</span>
+        <span id="drawerStepTag" class="step-counter">STEP 3</span>
+      </div>
+      <button id="btnCloseDrawer" class="btn-close-drawer" title="Close Panel (ESC)">✕</button>
+    </div>
+
+    <div class="drawer-content">
+      <!-- Media Illustration Frame -->
+      <div class="media-frame">
+        <img id="drawerImage" src="" alt="Historical Illustration">
+        <div class="media-badge">AI Historical Illustration</div>
+      </div>
+
+      <!-- Title & Basic Info -->
+      <h2 id="drawerTitle" class="detail-title">Bodh Gaya: Supreme Enlightenment</h2>
+      
+      <!-- Multi-media Narration Player -->
+      <div class="audio-card">
+        <div class="audio-header">
+          <span class="audio-label">
+            <span>🎙️</span> AI Voice Storyteller
+          </span>
+          <span id="audioStatusText" style="font-size:0.75rem; color:var(--text-muted);">Ready</span>
+        </div>
+        <div class="audio-controls-row">
+          <button id="btnTtsPlay" class="btn-tts-play">
+            <span id="ttsIcon">🔊</span>
+            <span id="ttsBtnText">Play Narration (TTS)</span>
+            <div class="sound-wave">
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+            </div>
+          </button>
+          <button id="btnAudioStop" class="btn-ctrl" style="display:none;" title="Stop">⏹</button>
+        </div>
+        <div class="audio-soundtrack-info" style="font-size:0.74rem; color:var(--text-light); background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:6px;">
+          <span>🎵 Theme Soundscape:</span>
+          <span id="drawerSoundtrackName" style="color:var(--accent-gold); font-weight:600;">Tibetan Singing Bowl &amp; Zen Temple Ambiance</span>
+        </div>
+      </div>
+
+      <!-- Metadata Breakdown -->
+      <div class="detail-meta-list">
+        <div class="meta-item">
+          <span class="meta-label">📍 Location:</span>
+          <span id="drawerLocation" class="meta-val">Bodh Gaya, Bihar, India</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">⏳ Era:</span>
+          <span id="drawerYear" class="meta-val">c. 528 BCE</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">🌐 GPS:</span>
+          <span class="meta-val">
+            <span id="drawerCoords">24.6959° N, 84.9913° E</span>
+            <a id="drawerGmapLink" href="#" target="_blank" style="margin-left: 8px;">[Google Maps ↗]</a>
+          </span>
+        </div>
+      </div>
+
+      <!-- Core Summary -->
+      <div class="section-block">
+        <h3 class="section-title"><span>📌</span> Core Summary</h3>
+        <p id="drawerSummary" class="section-body"></p>
+      </div>
+
+      <!-- Sacred Quote Callout -->
+      <div class="quote-box" id="drawerQuoteBox">
+        <p id="drawerQuote">"House-builder, you are seen! You shall build no more houses for me..."</p>
+      </div>
+
+      <!-- Detailed Historical Narrative -->
+      <div class="section-block">
+        <h3 class="section-title"><span>📜</span> Historical Context &amp; Narrative</h3>
+        <p id="drawerDesc" class="section-body"></p>
+      </div>
+
+      <!-- Theological & Philosophical Significance -->
+      <div class="section-block">
+        <h3 class="section-title"><span>✨</span> Theological &amp; Philosophical Significance</h3>
+        <p id="drawerSignificance" class="section-body"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================== -->
+  <!-- In-Browser Easy Data Editor Modal (Quick Modification Without Coding) -->
+  <!-- ========================================================================== -->
+  <div id="editorModalOverlay" class="modal-overlay">
+    <div class="editor-modal glass-panel">
+      <div class="modal-header">
+        <h2>✏️ Interactive Data Manager</h2>
+        <button id="btnCloseEditor" class="btn-close-drawer">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="editor-tabs">
+          <button class="editor-tab-btn active" data-tab="list">📋 Node Directory (<span id="editorNodeCount">17</span> Locations)</button>
+          <button class="editor-tab-btn" data-tab="form">➕ Add / Edit Node</button>
+          <button class="editor-tab-btn" data-tab="export">💾 Export &amp; Download data.js</button>
+        </div>
+
+        <!-- TAB 1: List Table -->
+        <div id="tabList" class="tab-pane active">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Faith</th>
+                  <th>Event Title</th>
+                  <th>Location</th>
+                  <th>Historical Era</th>
+                  <th>GPS Coordinates</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="editorTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: Form (Add or Edit) -->
+        <div id="tabForm" class="tab-pane" style="display:none;">
+          <form id="nodeEditForm" class="form-grid">
+            <input type="hidden" id="formNodeId">
+
+            <div class="form-group">
+              <label class="form-label">Faith Tradition *</label>
+              <select id="formReligion" class="form-select" required>
+                <option value="buddhism">🟡 Buddhism (Gautama Buddha)</option>
+                <option value="christianity">🔴 Christianity (Jesus Christ)</option>
+                <option value="islam">🟢 Islam (Prophet Muhammad)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Step Order Number *</label>
+              <input type="number" id="formStep" class="form-input" min="1" max="99" value="1" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Event Title *</label>
+              <input type="text" id="formTitle" class="form-input" placeholder="e.g. Kapilavastu: Great Renunciation" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Geographic Location (City, Country) *</label>
+              <input type="text" id="formLocation" class="form-input" placeholder="e.g. Bodh Gaya, Bihar, India" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Historical Era Text *</label>
+              <input type="text" id="formYear" class="form-input" placeholder="e.g. c. 528 BCE" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Year Number (Negative for BCE, Positive for CE) *</label>
+              <input type="number" id="formYearNumber" class="form-input" placeholder="e.g. -528" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Latitude * <small style="color:#60a5fa; cursor:pointer;" id="btnPickOnMap">[Click map to auto-fill]</small></label>
+              <input type="number" step="0.0001" id="formLat" class="form-input" placeholder="e.g. 24.6959" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Longitude *</label>
+              <input type="number" step="0.0001" id="formLng" class="form-input" placeholder="e.g. 84.9913" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Core Summary (1-2 sentences) *</label>
+              <input type="text" id="formSummary" class="form-input" placeholder="Brief summary displayed on quick cards and popups" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Detailed Historical Narrative</label>
+              <textarea id="formDescription" class="form-textarea" placeholder="Comprehensive historical context and episode details"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Theological &amp; Philosophical Significance</label>
+              <textarea id="formSignificance" class="form-textarea" placeholder="The enduring religious meaning and philosophical impact"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Sacred Scripture Quote / Decree</label>
+              <input type="text" id="formQuote" class="form-input" placeholder="e.g. Blessed are the peacemakers...">
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Image URL (Web image or AI-generated illustration)</label>
+              <input type="url" id="formImageUrl" class="form-input" placeholder="https://...">
+            </div>
+
+            <div class="form-group full-width" style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+              <button type="button" id="btnCancelForm" class="btn-tool">Cancel</button>
+              <button type="submit" class="btn-tool btn-highlight">💾 Save Changes</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- TAB 3: Export & Download -->
+        <div id="tabExport" class="tab-pane" style="display:none;">
+          <p style="font-size:0.88rem; color:var(--text-light); line-height:1.6; margin-bottom:12px;">
+            Changes are saved live in your browser. Click <strong>[Download data.js]</strong> to save the updated dataset file, then simply replace the <code style="color:var(--accent-gold);">data.js</code> file in the project folder to make changes permanent!
+          </p>
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <button id="btnDownloadDataJs" class="btn-tool btn-highlight">📥 Download data.js File</button>
+            <button id="btnCopyJson" class="btn-tool">📋 Copy JSON to Clipboard</button>
+            <button id="btnResetDefaultData" class="btn-tool" style="color:#ef4444;">🔄 Reset to Default Data</button>
+          </div>
+          <textarea id="exportJsonViewer" class="form-textarea" style="height:260px; font-family:monospace; font-size:0.78rem;" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span style="font-size:0.8rem; color:var(--text-muted);">💡 Tip: You can click anywhere on the map to automatically populate latitude and longitude.</span>
+        <button id="btnModalDone" class="btn-tool">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Popup -->
+  <div id="toast" class="toast-msg">Notification message</div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- App Data & Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          console.log('ServiceWorker registered with scope:', reg.scope);
+        }).catch((err) => {
+          console.log('ServiceWorker registration skipped/failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
