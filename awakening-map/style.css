@@ -460,6 +460,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .timeline-header-row {
@@ -1214,4 +1215,43 @@ body {
   .form-group.full-width {
     grid-column: span 1;
   }
+}
+
+/* ==============================================================================
+   Zen Mode: Pure Satellite View (Immersive Landscape)
+   ============================================================================== */
+body.zen-mode #storyQuickCard {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(-30px);
+}
+
+body.zen-mode .bottom-timeline-bar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(-50%) translateY(30px) !important;
+}
+
+body.zen-mode .filter-tabs,
+body.zen-mode .brand-title-group,
+body.zen-mode #btnTourToggle,
+body.zen-mode #btnOpenEditor {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+body.zen-mode #appHeader {
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.zen-mode #btnZenMode {
+  background: #3b82f6 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
 }

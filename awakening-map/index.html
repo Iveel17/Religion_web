@@ -95,14 +95,20 @@
           </div>
           <div class="bgm-track-selector">
             <button class="bgm-choice-btn active" data-track="auto">🔄 Auto (Sync with Active Faith / Story)</button>
-            <button class="bgm-choice-btn" data-track="buddhism">🟡 Buddhism (Singing Bowl &amp; Bansuri)</button>
-            <button class="bgm-choice-btn" data-track="christianity">🔴 Christianity (Gregorian Chant &amp; Cathedral)</button>
-            <button class="bgm-choice-btn" data-track="islam">🟢 Islam (A Cappella Nasheed &amp; Ney Flute)</button>
+            <button class="bgm-choice-btn" data-track="buddhism">🟡 Buddhism (Acoustic Tibetan Singing Bowl)</button>
+            <button class="bgm-choice-btn" data-track="christianity">🔴 Christianity (Gregorian Chant - Dies Irae Choir)</button>
+            <button class="bgm-choice-btn" data-track="islam">🟢 Islam (A Cappella Spiritual Modal Chant)</button>
           </div>
+          <button id="btnFlyoutPlay" class="btn-tool btn-highlight" style="width:100%; justify-content:center; padding:7px;">
+            <span id="flyoutPlayIcon">▶</span> <span id="flyoutPlayText">Play Background Music</span>
+          </button>
         </div>
       </div>
-      <button id="btnTileToggle" class="btn-tool" title="Switch map theme (Dark / Antique Light / OSM)">
-        <span>🗺️</span> Map Theme
+      <button id="btnToggleLabels" class="btn-tool active" title="Toggle country borders & city labels on satellite map">
+        <span>🏷️</span> Labels
+      </button>
+      <button id="btnZenMode" class="btn-tool" title="Toggle pure satellite view (Hide/Show UI panels)">
+        <span>👁️</span> Pure Map
       </button>
       <button id="btnOpenEditor" class="btn-tool btn-highlight" title="Add new locations or edit data directly">
         <span>✏️</span> Edit Data

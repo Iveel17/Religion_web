@@ -15,8 +15,10 @@ const state = {
   
   // Map Elements
   map: null,
-  tileLayer: null,
-  currentTileTheme: 'dark', // 'dark' | 'voyager' | 'osm'
+  satelliteLayer: null,
+  labelsLayer: null,
+  showLabels: true,
+  isZenMode: false,
   markersLayer: null,
   polylinesLayer: null,
   markersMap: new Map(),
@@ -30,29 +32,18 @@ const state = {
   isBgmPlaying: false,
   bgmAudio: new Audio(),
   bgmMode: 'auto', // 'auto' | 'buddhism' | 'christianity' | 'islam'
-  bgmVolume: 0.7,
+  bgmVolume: 0.75,
   activeBgmReligion: 'buddhism',
   isSpeaking: false,
   speechUtterance: null
 };
 
-// Tile Layer Configuration
-const TILE_THEMES = {
-  dark: {
-    name: 'CartoDB Dark Matter',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-  },
-  voyager: {
-    name: 'Antique Voyager Light',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-  },
-  osm: {
-    name: 'OpenStreetMap Standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-  }
+// Exclusive High-Definition Satellite Map Configuration (Esri World Imagery + Reference Overlay)
+const SATELLITE_CONFIG = {
+  name: 'Satellite Topography (Esri World Imagery)',
+  imageryUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  labelsUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+  attribution: '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a>, Earthstar Geographics'
 };
 
 // ==============================================================================
@@ -104,18 +95,18 @@ function persistData() {
 function initMap() {
   // Center on ancient Afro-Eurasian cradle (Levant, Arabia, India)
   state.map = L.map('map', {
-    center: [27.0, 58.0],
+    center: [26.5, 52.0],
     zoom: 4,
     minZoom: 3,
-    maxZoom: 16,
+    maxZoom: 18,
     zoomControl: false
   });
 
   // Add zoom control at bottom-right
   L.control.zoom({ position: 'bottomright' }).addTo(state.map);
 
-  // Set default tile layer
-  setMapTheme('dark');
+  // Set Satellite map as the exclusive map layer
+  initSatelliteMap();
 
   // Layers for markers and paths
   state.markersLayer = L.layerGroup().addTo(state.map);
@@ -127,18 +118,72 @@ function initMap() {
       handlePickedCoordinates(e.latlng.lat, e.latlng.lng);
     }
   });
+
+  // CRITICAL FIX: Ensure map tiles and container dimensions recalculate immediately
+  window.addEventListener('resize', () => {
+    if (state.map) state.map.invalidateSize();
+  });
+  setTimeout(() => {
+    if (state.map) state.map.invalidateSize();
+  }, 150);
+  setTimeout(() => {
+    if (state.map) state.map.invalidateSize();
+  }, 600);
 }
 
-function setMapTheme(themeKey) {
-  state.currentTileTheme = themeKey;
-  const cfg = TILE_THEMES[themeKey];
-  if (state.tileLayer) {
-    state.map.removeLayer(state.tileLayer);
+/**
+ * Initialize High-Resolution Satellite Map + Hybrid Borders & Place Names Overlay
+ */
+function initSatelliteMap() {
+  const imageryOptions = {
+    attribution: SATELLITE_CONFIG.attribution,
+    maxZoom: 19,
+    crossOrigin: true
+  };
+  state.satelliteLayer = L.tileLayer(SATELLITE_CONFIG.imageryUrl, imageryOptions).addTo(state.map);
+
+  const labelsOptions = {
+    maxZoom: 19,
+    crossOrigin: true
+  };
+  state.labelsLayer = L.tileLayer(SATELLITE_CONFIG.labelsUrl, labelsOptions).addTo(state.map);
+  state.showLabels = true;
+
+  if (state.map) state.map.invalidateSize();
+}
+
+/**
+ * Toggle Satellite Labels & Boundaries on/off
+ */
+function toggleSatelliteLabels() {
+  state.showLabels = !state.showLabels;
+  if (state.showLabels) {
+    if (!state.map.hasLayer(state.labelsLayer)) {
+      state.labelsLayer.addTo(state.map);
+    }
+    showToast('Satellite: Borders & Labels Visible');
+  } else {
+    if (state.map.hasLayer(state.labelsLayer)) {
+      state.map.removeLayer(state.labelsLayer);
+    }
+    showToast('Satellite: Pure Satellite Imagery (Labels Hidden)');
   }
-  state.tileLayer = L.tileLayer(cfg.url, {
-    attribution: cfg.attribution,
-    maxZoom: 19
-  }).addTo(state.map);
+  const btn = document.getElementById('btnToggleLabels');
+  if (btn) btn.classList.toggle('active', state.showLabels);
+}
+
+/**
+ * Toggle Zen / Pure Map Mode (Hide/Show UI controls to immerse in the satellite view)
+ */
+function toggleZenMode() {
+  state.isZenMode = !state.isZenMode;
+  document.body.classList.toggle('zen-mode', state.isZenMode);
+  const btn = document.getElementById('btnZenMode');
+  if (btn) btn.classList.toggle('active', state.isZenMode);
+  showToast(state.isZenMode ? '🗺️ Pure Satellite Map View (UI Hidden - Click Pure Map to Restore)' : 'UI Controls Restored');
+  if (state.map) {
+    setTimeout(() => state.map.invalidateSize(), 200);
+  }
 }
 
 /**
@@ -352,11 +397,17 @@ function updateDrawerContent(node) {
 
 function openDrawer() {
   document.getElementById('detailDrawer').classList.add('open');
+  setTimeout(() => {
+    if (state.map) state.map.invalidateSize();
+  }, 350);
 }
 
 function closeDrawer() {
   document.getElementById('detailDrawer').classList.remove('open');
   stopTTS();
+  setTimeout(() => {
+    if (state.map) state.map.invalidateSize();
+  }, 350);
 }
 
 // ==============================================================================
@@ -382,9 +433,10 @@ function applyReligionFilter(religionKey) {
   renderMapFeatures();
 
   // Adjust map bounds to encompass visible nodes
-  if (state.filteredNodes.length > 0) {
+  if (state.filteredNodes.length > 0 && state.map) {
+    state.map.invalidateSize();
     const group = L.featureGroup(Array.from(state.markersMap.values()));
-    state.map.fitBounds(group.getBounds().pad(0.2), { duration: 1 });
+    state.map.fitBounds(group.getBounds().pad(0.18), { duration: 0.8 });
     selectNode(state.filteredNodes[0], false);
   }
 
@@ -543,6 +595,15 @@ function initBgmSystem() {
     });
   });
 
+  // Flyout Play/Pause button
+  const flyoutPlay = document.getElementById('btnFlyoutPlay');
+  if (flyoutPlay) {
+    flyoutPlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleBgm();
+    });
+  }
+
   // Close flyout on outside click
   document.addEventListener('click', (e) => {
     const widget = document.getElementById('bgmWidget');
@@ -663,6 +724,11 @@ function updateBgmVisuals(isPlaying) {
   const wave = document.getElementById('bgmWave');
   if (btn) btn.classList.toggle('active', isPlaying);
   if (wave) wave.style.display = isPlaying ? 'flex' : 'none';
+
+  const flyoutIcon = document.getElementById('flyoutPlayIcon');
+  const flyoutText = document.getElementById('flyoutPlayText');
+  if (flyoutIcon) flyoutIcon.textContent = isPlaying ? '⏸' : '▶';
+  if (flyoutText) flyoutText.textContent = isPlaying ? 'Pause Background Music' : 'Play Background Music';
 }
 
 // ==============================================================================
@@ -878,12 +944,17 @@ function bindUIEvents() {
   document.getElementById('btnPlayPauseTour').addEventListener('click', toggleTourMode);
   document.getElementById('btnBgmToggle').addEventListener('click', toggleBgm);
 
-  // Map Tile Toggle
-  document.getElementById('btnTileToggle').addEventListener('click', () => {
-    const nextTheme = (state.currentTileTheme === 'dark') ? 'voyager' : (state.currentTileTheme === 'voyager' ? 'osm' : 'dark');
-    setMapTheme(nextTheme);
-    showToast(`Map Theme: ${TILE_THEMES[nextTheme].name}`);
-  });
+  // Satellite Map Labels Toggle
+  const btnToggleLabels = document.getElementById('btnToggleLabels');
+  if (btnToggleLabels) {
+    btnToggleLabels.addEventListener('click', toggleSatelliteLabels);
+  }
+
+  // Pure Satellite Map View (Zen Mode)
+  const btnZenMode = document.getElementById('btnZenMode');
+  if (btnZenMode) {
+    btnZenMode.addEventListener('click', toggleZenMode);
+  }
 
   // Editor Modal Open/Close
   document.getElementById('btnOpenEditor').addEventListener('click', openEditorModal);

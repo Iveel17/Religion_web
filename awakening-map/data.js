@@ -39,9 +39,9 @@ const RELIGIONS_CONFIG = {
     darkColor: '#B45309',
     icon: '☸️',
     description: 'Born in the ancient Gangetic plains; teachings of Compassion (Karuna), Dependent Origination (Pratītyasamutpāda), and the Middle Way.',
-    bgmUrl: 'audio/buddhism_zen_singing_bowl.wav',
-    bgmTitle: 'Tibetan Singing Bowl & Zen Temple Ambiance',
-    bgmStyle: 'Tibetan singing bowl, deep meditative drone, bansuri flute, temple ambiance, Zen tranquil'
+    bgmUrl: 'audio/buddhism_singing_bowl.ogg',
+    bgmTitle: 'Tibetan Singing Bowl (Authentic Acoustic Recording)',
+    bgmStyle: 'Tibetan singing bowl, deep meditative drone, temple ambiance, Zen tranquil'
   },
   christianity: {
     name: 'Christianity',
@@ -51,8 +51,8 @@ const RELIGIONS_CONFIG = {
     darkColor: '#991B1B',
     icon: '✝️',
     description: 'Originated in Roman Galilee and Judea; message of Unconditional Love (Agape), Redemption, and the Kingdom of God.',
-    bgmUrl: 'audio/christianity_gregorian_choir.wav',
-    bgmTitle: 'Gregorian Chant & Solemn Cathedral Choir',
+    bgmUrl: 'audio/christianity_gregorian_chant.ogg',
+    bgmTitle: 'Gregorian Chant (Solemn Cathedral Monastic Choir)',
     bgmStyle: 'Gregorian chant, solemn choir, cathedral reverb, monophonic, sacred acoustic'
   },
   islam: {
@@ -63,9 +63,9 @@ const RELIGIONS_CONFIG = {
     darkColor: '#065F46',
     icon: '☪️',
     description: 'Proclaimed in the Arabian oases of Mecca and Medina; complete devotion and submission to the One God (Allah) and universal justice.',
-    bgmUrl: 'audio/islam_nasheed_ney_breeze.wav',
-    bgmTitle: 'A Cappella Nasheed & Ambient Ney Flute',
-    bgmStyle: 'A cappella Nasheed, ambient ney flute, Arabic modal scales, soulful vocal drone, desert breeze'
+    bgmUrl: 'audio/islam_nasheed_adhan.ogg',
+    bgmTitle: 'A Cappella Sacred Chant (Soulful Arabic Modal Melodies)',
+    bgmStyle: 'A cappella Nasheed, Arabic modal scales, soulful vocal drone, desert breeze'
   }
 };
 

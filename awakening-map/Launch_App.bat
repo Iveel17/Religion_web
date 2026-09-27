@@ -16,13 +16,13 @@ if not exist %CHROME_PATH% set CHROME_PATH="C:\Program Files (x86)\Google\Chrome
 
 :: 1. If Edge exists, launch as a sleek native app window
 if exist %EDGE_PATH% (
-    start "" %EDGE_PATH% --app="file:///%~dp0index.html" --window-size=1366,850
+    start "" %EDGE_PATH% --app="%~dp0index.html" --window-size=1366,850
     exit /b
 )
 
 :: 2. Else if Chrome exists, launch in app mode
 if exist %CHROME_PATH% (
-    start "" %CHROME_PATH% --app="file:///%~dp0index.html" --window-size=1366,850
+    start "" %CHROME_PATH% --app="%~dp0index.html" --window-size=1366,850
     exit /b
 )
 
