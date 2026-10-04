@@ -25,7 +25,7 @@ for(const question of QUESTIONS){
 for(const answer of ANSWERS){
   assert(QUESTIONS.some(q=>q.id===answer.questionId),`${answer.id} has unknown question`);
   assert(PERSPECTIVES.some(p=>p.id===answer.perspectiveId),`${answer.id} has unknown perspective`);
-  assert(answer.reviewStatus!=='draft',`${answer.id} remains a draft`);
+  assert(['editorial-component-review','individual-review'].includes(answer.reviewStatus),`${answer.id} has an unknown review status`);
   assert(words(answer.body)>=50&&words(answer.body)<=100,`${answer.id} body is ${words(answer.body)} words (expected 50–100)`);
   assert(words(answer.thesis)>=3&&words(answer.thesis)<=16,`${answer.id} thesis is ${words(answer.thesis)} words`);
   assert(answer.sourceIds.length>0,`${answer.id} has no source`);

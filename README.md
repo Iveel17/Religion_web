@@ -30,9 +30,10 @@ No dependency installation is required.
 ```powershell
 npm test
 npm run validate
+npm run test:browser -- http://localhost:8000/
 ```
 
-The test suite verifies search behavior and the 18 × 18 content matrix. The validator checks IDs, coverage, source references, word bounds, review status, HTTPS source URLs, and exact duplicate answer bodies.
+The test suite verifies search behavior and the 18 × 18 content matrix. The validator checks IDs, coverage, source references, word bounds, review status, HTTPS source URLs, and exact duplicate answer bodies. The browser smoke test uses Microsoft Edge and accepts the served site URL as its final argument; it verifies routes, category browsing, comparison, keyboard skip navigation, responsive widths, and the Journeys page.
 
 ## Content and architecture
 

@@ -6,6 +6,7 @@ const live = document.querySelector('#live-region');
 let activeCategory = 'all';
 let searchValue = '';
 let compareIds = [];
+let showAllQuestions = false;
 let debounceTimer;
 
 const el = (tag, className, text) => {
@@ -29,7 +30,7 @@ function shell(content, active='questions') {
     const item=link(label,href,id===active?'active':''); if(id===active)item.setAttribute('aria-current','page'); links.append(item);
   });
   nav.append(links); header.append(nav);
-  const main=el('main','main'); main.id='main-content'; main.append(content);
+  const main=el('main','main'); main.id='main-content'; main.tabIndex=-1; main.append(content);
   const footer=el('footer','site-footer'); footer.append(el('p','', 'A class project for comparing ideas—not personalized religious or professional advice.'));
   app.append(header,main,footer);
 }
@@ -61,24 +62,34 @@ function renderQuestions() {
     const button=el('button','filter-button',category.name); button.type='button'; button.dataset.category=category.id; button.setAttribute('aria-pressed',String(activeCategory===category.id)); filters.append(button);
   });
   page.append(filters);
-  const resultsSection=el('section','results-section'); const heading=el('h2','section-heading',searchValue?'Matching questions':'Featured questions'); resultsSection.append(heading);
+  const resultsSection=el('section','results-section');
+  const headingRow=el('div','results-heading-row');
+  const heading=el('h2','section-heading',searchValue?'Matching questions':'Featured questions');
+  const browseAll=el('button','text-button browse-all','Browse all 18 questions'); browseAll.type='button';
+  headingRow.append(heading,browseAll); resultsSection.append(headingRow);
   const grid=el('div','question-grid'); resultsSection.append(grid); page.append(resultsSection);
 
   const update=()=>{
     searchValue=input.value;
     clear.hidden=!searchValue;
-    const results=searchQuestions(searchValue,QUESTIONS,activeCategory);
-    heading.textContent=searchValue.trim()?'Matching questions':activeCategory==='all'?'Featured questions':CATEGORIES.find(c=>c.id===activeCategory).name;
+    const results=(!searchValue.trim() && activeCategory==='all' && showAllQuestions)
+      ? QUESTIONS
+      : searchQuestions(searchValue,QUESTIONS,activeCategory);
+    heading.textContent=searchValue.trim()?'Matching questions':activeCategory==='all'?(showAllQuestions?'All 18 questions':'Featured questions'):CATEGORIES.find(c=>c.id===activeCategory).name;
+    browseAll.hidden=Boolean(searchValue.trim()) || activeCategory!=='all';
+    browseAll.textContent=showAllQuestions?'Show six featured questions':'Browse all 18 questions';
     grid.replaceChildren();
     if(!results.length) {
-      const empty=el('div','empty-state'); empty.append(el('h3','',"We don't have a prepared question for that yet."),el('p','', 'Try a shorter phrase or browse the topics. Your text was not sent anywhere.')); grid.append(empty);
+      const empty=el('div','empty-state'); empty.append(el('h3','',"We don't have a prepared question for that yet."),el('p','', 'Try a shorter phrase or browse all 18 questions. Your text was not sent anywhere.'));
+      const browse=el('button','button-link','Browse all questions'); browse.type='button'; browse.addEventListener('click',()=>{input.value='';searchValue='';activeCategory='all';showAllQuestions=true;filters.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category==='all')));update();}); empty.append(browse); grid.append(empty);
     } else results.forEach(q=>grid.append(questionCard(q)));
     announce(`${results.length} question${results.length===1?'':'s'} shown.`);
   };
   input.addEventListener('input',()=>{ clearTimeout(debounceTimer); debounceTimer=setTimeout(update,120); });
   form.addEventListener('submit',e=>e.preventDefault());
   clear.addEventListener('click',()=>{input.value='';searchValue='';update();input.focus();});
-  filters.addEventListener('click',e=>{const button=e.target.closest('button[data-category]');if(!button)return;activeCategory=button.dataset.category;filters.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));update();});
+  browseAll.addEventListener('click',()=>{showAllQuestions=!showAllQuestions;update();});
+  filters.addEventListener('click',e=>{const button=e.target.closest('button[data-category]');if(!button)return;activeCategory=button.dataset.category;showAllQuestions=false;filters.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));update();});
   update();
   shell(page,'questions');
 }
@@ -111,8 +122,18 @@ function compareBar(question) {
   bar.append(el('p','',names.length?`Compare: ${names.join(' · ')}`:'Select 2–3 perspectives to compare.'));
   const actions=el('div','compare-actions');
   if(compareIds.length>=2) actions.append(link('Open comparison',`#/question/${question.id}?compare=${compareIds.join(',')}`,'button-link'));
-  if(compareIds.length) {const clear=el('button','text-button','Clear');clear.type='button';clear.addEventListener('click',()=>{compareIds=[];renderQuestion(question.id);});actions.append(clear);}
+  if(compareIds.length) {const clear=el('button','text-button','Clear');clear.type='button';clear.addEventListener('click',()=>{compareIds=[];refreshComparisonControls(question);announce('Comparison cleared.');});actions.append(clear);}
   bar.append(actions); return bar;
+}
+
+function refreshComparisonControls(question) {
+  const current=document.querySelector('.compare-bar');
+  if(current)current.replaceWith(compareBar(question));
+  document.querySelectorAll('[data-compare]').forEach(button=>{
+    const selected=compareIds.includes(button.dataset.compare);
+    button.setAttribute('aria-pressed',String(selected));
+    button.textContent=selected?'Remove from comparison':'Compare';
+  });
 }
 
 function parseCompare(questionId) {
@@ -121,9 +142,9 @@ function parseCompare(questionId) {
 }
 
 function renderComparison(question, selected) {
-  const page=el('div','comparison-page'); page.append(link('← Back to all perspectives',`#/question/${question.id}`,'back-link'),el('p','eyebrow','Comparison'),el('h1','page-title',question.title),el('p','disclaimer','Modern interpretations inspired by these figures and their traditions—not quotations or personal replies.'));
+  const page=el('div','comparison-page'); page.append(link('← Back to all perspectives',`#/question/${question.id}`,'back-link'),el('p','eyebrow','Comparison'),el('h1','page-title',question.title),el('p','disclaimer','Modern interpretations inspired by cited sources—not quotations, revelation, or personal replies.'));
   const grid=el('div','comparison-grid'); const all=answersFor(question.id);
-  selected.forEach(id=>{const p=perspectiveById(id);const a=all.find(item=>item.perspectiveId===id);if(a)grid.append(answerCard(a,p,question));}); page.append(grid); shell(page,'questions');
+  selected.forEach(id=>{const p=perspectiveById(id);const a=all.find(item=>item.perspectiveId===id);if(a){const card=answerCard(a,p,question);const remove=card.querySelector('.compare-button');remove.hidden=false;remove.textContent='Remove from comparison';remove.addEventListener('click',()=>{compareIds=compareIds.filter(item=>item!==id);if(compareIds.length>=2)location.hash=`/question/${question.id}?compare=${compareIds.join(',')}`;else location.hash=`/question/${question.id}`;});grid.append(card);}}); page.append(grid); shell(page,'questions');
 }
 
 function renderQuestion(id, preserveSelection=false) {
@@ -131,13 +152,13 @@ function renderQuestion(id, preserveSelection=false) {
   setTitle(question.title); if(!preserveSelection) compareIds=parseCompare(id);
   if(compareIds.length>=2 && location.hash.includes('?compare=')) return renderComparison(question,compareIds);
   const answers=answersFor(id); const page=el('div','question-page');
-  page.append(link('← Change question','#/questions','back-link'),el('p','eyebrow',CATEGORIES.find(c=>c.id===question.categoryId).name),el('h1','page-title',question.title),el('p','premise',question.premise),el('p','disclaimer','Modern interpretations inspired by these figures and their traditions—not quotations or personal replies.'));
+  page.append(link('← Change question','#/questions','back-link'),el('p','eyebrow',CATEGORIES.find(c=>c.id===question.categoryId).name),el('h1','page-title',question.title),el('p','premise',question.premise),el('p','disclaimer','Modern interpretations inspired by cited sources—not quotations, revelation, or personal replies.'));
   page.append(compareBar(question));
   const columns=el('div','tradition-grid'); ['buddhism','christianity','islam'].forEach(r=>columns.append(groupAnswers(question,answers,r))); page.append(columns);
   const expand=el('button','expand-all','Expand all 18 perspectives'); expand.type='button'; expand.addEventListener('click',()=>{page.querySelectorAll('.more-answers').forEach(node=>node.hidden=false);page.querySelectorAll('.reveal-button').forEach(node=>{node.setAttribute('aria-expanded','true');node.textContent='Show lead perspective';});expand.hidden=true;});page.append(expand);
   const reflection=el('section','reflection'); reflection.append(el('h2','', 'Where these readings meet'),el('p','',`Across their differences, these readings refuse to let ${question.shortProblem} become the whole truth about a person. They direct attention toward honest self-knowledge, the consequences of conduct, and a next step that does not deepen avoidable harm.`),el('h2','', 'Where they differ'),el('p','',`They do not offer one theory of the good life. Buddhist readings emphasize suffering, attachment, and disciplined awareness; Christian readings foreground grace, love, and responsibility before God; Islamic readings foreground devotion, intention, justice, and accountability to God. Individual figures also disagree within those broad families.`)); page.append(reflection);
-  page.addEventListener('click',e=>{const button=e.target.closest('[data-compare]');if(!button)return;const pid=button.dataset.compare;if(compareIds.includes(pid))compareIds=compareIds.filter(x=>x!==pid);else if(compareIds.length<3)compareIds.push(pid);else{announce('You can compare up to three perspectives. Remove one before adding another.');return;}renderQuestion(id,true);});
-  shell(page,'questions'); requestAnimationFrame(()=>page.querySelector('h1')?.focus?.());
+  page.addEventListener('click',e=>{const button=e.target.closest('[data-compare]');if(!button)return;const pid=button.dataset.compare;if(compareIds.includes(pid))compareIds=compareIds.filter(x=>x!==pid);else if(compareIds.length<3)compareIds.push(pid);else{announce('You can compare up to three perspectives. Remove one before adding another.');return;}refreshComparisonControls(question);button.focus();announce(`${perspectiveById(pid).displayName} ${compareIds.includes(pid)?'selected for':'removed from'} comparison.`);});
+  shell(page,'questions');
 }
 
 function renderFigures() {
@@ -152,11 +173,12 @@ function renderFigure(id) {
 }
 
 function renderAbout(){setTitle('About');const page=el('article','about-page');page.append(el('p','kicker','About the project'),el('h1','page-title','A library of prepared perspectives'),el('p','lead','Awakening & Dispersion is a class project for comparing how selected Buddhist, Christian, and Islamic figures can inform difficult questions.'));
-  [['What the answers are','Every answer is a modern editorial interpretation based on cited material. It is not a historical quotation, revelation, personal reply, or claim that all members of a religion agree.'],['How search works','Search runs entirely in this browser against titles, aliases, and keywords for 18 prepared questions. It does not call an AI model and cannot answer an unprepared question.'],['Privacy and cost','Your search text is not stored, placed in the URL, or sent to an AI service. The hosting provider still receives ordinary page and asset requests, and external source links and the map use the network.'],['Limits','The selected figures do not represent every school or believer. This project is educational reflection, not religious authority, therapy, legal advice, medical advice, or crisis support.']].forEach(([h,p])=>page.append(el('h2','section-heading',h),el('p','',p)));shell(page,'about');}
+  [['How to use it','Choose one of the 18 prepared questions. Open the remaining figures within each tradition, or select two or three perspectives for a side-by-side comparison.'],['What the answers are','The 324 responses are modern editorial interpretations assembled from question-specific and figure-specific research components. They are not historical quotations, revelation, personal replies, or claims that all members of a religion agree.'],['How the material was prepared','Each figure has a named interpretive lens and a linked research starting point. The source explains the core lens; the application to each modern problem is the project’s own writing. Traditional or uncertain attributions are identified where relevant.'],['How search works','Search runs entirely in this browser against titles, aliases, and keywords for 18 prepared questions. It does not call an AI model and cannot answer an unprepared question.'],['Privacy and cost','Your search text is not stored, placed in the URL, or sent to an AI service. The hosting provider still receives ordinary page and asset requests, and external source links and the map use the network.'],['Limits','The selected figures do not represent every school or believer. This project is educational reflection, not religious authority, therapy, legal advice, medical advice, or crisis support.']].forEach(([h,p])=>page.append(el('h2','section-heading',h),el('p','',p)));shell(page,'about');}
 
-function renderNotFound(){setTitle('Not found');const page=el('div','empty-state');page.append(el('h1','page-title','That page is not in this library.'),el('p','', 'Choose one of the prepared questions or browse the figures.'),link('Browse questions','#/questions','button-link'));shell(page);}
+function renderNotFound(){setTitle('Not found');const page=el('div','empty-state');page.append(el('h1','page-title','That page is not in this library.'),el('p','', 'Choose one of the prepared questions or browse the figures.'));const actions=el('div','not-found-actions');actions.append(link('Browse questions','#/questions','button-link'),link('Browse figures','#/figures','chip-link'));page.append(actions);shell(page);}
 
 function route(){window.scrollTo(0,0);const path=location.hash.slice(1).split('?')[0]||'/questions';const parts=path.split('/').filter(Boolean);if(parts[0]==='questions'&&!parts[1])return renderQuestions();if(parts[0]==='question'&&parts[1])return renderQuestion(parts[1]);if(parts[0]==='figures'&&!parts[1])return renderFigures();if(parts[0]==='figure'&&parts[1])return renderFigure(parts[1]);if(parts[0]==='about')return renderAbout();return renderNotFound();}
 
 window.addEventListener('hashchange',route);
+document.querySelector('#skip-link')?.addEventListener('click',event=>{event.preventDefault();document.querySelector('#main-content')?.focus();});
 route();

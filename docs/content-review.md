@@ -5,10 +5,11 @@ Reviewed 2026-10-05.
 ## Status
 
 - Dataset integrity: 18 questions, 18 perspective slots, 17 identities, and 324 unique response bodies.
-- Every answer is labeled as a modern interpretation and has at least one source record.
-- Scripture references and the official Dalai Lama page were inspected during planning. Stanford Encyclopedia entries were used for Nagarjuna and al-Ghazali context.
-- Sources for Ashoka, Bodhidharma, Luther, Malcolm X, Rabi'a, Rumi, Ibn Arabi, and Abu Hanifa are documented research starting points. Their response lenses deliberately avoid verbatim quotation.
-- The answer matrix uses reviewed perspective and question components to produce 324 complete combinations. The site does not claim individual human theological review.
+- Every answer is labeled as a modern interpretation and has at least one research source record.
+- The five Bible references, the Dhammapada selection, Ashoka's edicts, the Nagarjuna and al-Ghazali encyclopedia entries, the Bodhidharma collection, the official Dalai Lama page, Qur’an 26:83–89, the Malcolm X transcript and context, the Rabi'a biography, and the Abu Hanifa encyclopedia entry were opened during the submission review. Their displayed titles, references, and core lens claims were checked.
+- The Luther PDF, Rumi article, and Ibn Arabi Society page remain documented research starting points: the text-review tool could not retrieve their bodies during the submission review. Their lenses avoid verbatim quotation and the site does not claim individual theological review.
+- The Malcolm X record was corrected from 3 April to 12 April 1964 to match the linked Detroit transcript. The page also supplies later-1964 context for his changing outlook.
+- The answer matrix uses question-specific and perspective-specific editorial components to produce 324 complete combinations. Its status is `editorial-component-review`; the site does not claim individual theological review of every combination.
 
 ## Editorial limitations
 

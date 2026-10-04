@@ -13,6 +13,7 @@ export function searchQuestions(query, questions, categoryId='all') {
   const queryTokens = tokens(query);
   const candidates = categoryId === 'all' ? questions : questions.filter(q => q.categoryId === categoryId);
   if (!normalized) {
+    if (categoryId !== 'all') return candidates;
     const featuredOrder=['q01-replaced','q04-suffering','q03-forgive','q06-good-without-religion','q07-parents','q09-envy'];
     return candidates.filter(q => q.featured).sort((a,b)=>featuredOrder.indexOf(a.id)-featuredOrder.indexOf(b.id));
   }

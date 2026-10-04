@@ -15,7 +15,7 @@ npm test
 npm run validate
 ```
 
-`human-reviewed` is reserved for a real human review. Source inspection by the implementation model may be marked `source-checked`; unresolved content remains `draft` and must not ship.
+Use `editorial-component-review` when the question and perspective components have been checked but the exact combination has not received an individual theological review. Reserve `individual-review` for a documented review of that complete response. Unresolved content remains `draft` and must not ship.
 
 ## Editing a perspective
 
