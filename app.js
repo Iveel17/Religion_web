@@ -51,6 +51,12 @@ const SATELLITE_CONFIG = {
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  if (typeof window.L === 'undefined') {
+    const mapElement = document.getElementById('map');
+    mapElement.textContent = 'The interactive map needs a network connection to load its map library.';
+    mapElement.classList.add('map-unavailable');
+    return;
+  }
   initMap();
   bindUIEvents();
   initBgmSystem();
@@ -70,7 +76,8 @@ function loadData() {
   const savedData = localStorage.getItem('AWAKENING_MAP_DATA');
   if (savedData) {
     try {
-      state.nodes = JSON.parse(savedData);
+      const parsed = JSON.parse(savedData);
+      state.nodes = Array.isArray(parsed) && parsed.every(isValidNode) ? parsed : [...MAP_NODES];
     } catch (e) {
       console.error('Failed to parse saved data, falling back to default', e);
       state.nodes = [...MAP_NODES];
@@ -78,6 +85,17 @@ function loadData() {
   } else {
     state.nodes = [...MAP_NODES];
   }
+}
+
+function isValidNode(node) {
+  return node && typeof node.id === 'string' && /^[a-z0-9-]+$/i.test(node.id) &&
+    ['buddhism', 'christianity', 'islam'].includes(node.religion) &&
+    typeof node.title === 'string' && typeof node.location === 'string' &&
+    Number.isFinite(Number(node.lat)) && Number.isFinite(Number(node.lng));
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
 }
 
 /**
@@ -209,8 +227,8 @@ function renderMapFeatures() {
     // Create Custom HTML Pin Marker
     const religionCfg = RELIGIONS_CONFIG[node.religion] || {};
     const iconHtml = `
-      <div class="custom-pin ${node.religion}" id="pin-${node.id}" title="${node.title}">
-        <span>${node.step}</span>
+      <div class="custom-pin ${escapeHtml(node.religion)}" id="pin-${escapeHtml(node.id)}" title="${escapeHtml(node.title)}">
+        <span>${escapeHtml(node.step)}</span>
       </div>
     `;
 
@@ -225,17 +243,17 @@ function renderMapFeatures() {
     const marker = L.marker([node.lat, node.lng], { icon: customIcon });
 
     // Interactive Leaflet Popup
-    const popupContent = `
-      <div class="map-popup-card">
-        <span class="religion-pill" style="background:${religionCfg.color}; color:#fff; align-self:flex-start;">
-          ${node.religionName || religionCfg.name} • STEP ${node.step}
-        </span>
-        <h4 class="popup-title">${node.title}</h4>
-        <div class="popup-year">${node.location} (${node.year})</div>
-        <p class="popup-summary">${node.summary}</p>
-        <button class="btn-popup-open" onclick="window.appSelectNode('${node.id}')">View Details &amp; Audio</button>
-      </div>
-    `;
+    const popupContent = document.createElement('div');
+    popupContent.className = 'map-popup-card';
+    const pill = document.createElement('span');
+    pill.className = 'religion-pill';
+    pill.style.cssText = `background:${religionCfg.color};color:#fff;align-self:flex-start`;
+    pill.textContent = `${node.religionName || religionCfg.name} • STEP ${node.step}`;
+    const popupTitle = document.createElement('h4'); popupTitle.className = 'popup-title'; popupTitle.textContent = node.title;
+    const popupYear = document.createElement('div'); popupYear.className = 'popup-year'; popupYear.textContent = `${node.location} (${node.year})`;
+    const popupSummary = document.createElement('p'); popupSummary.className = 'popup-summary'; popupSummary.textContent = node.summary;
+    const popupButton = document.createElement('button'); popupButton.className = 'btn-popup-open'; popupButton.textContent = 'View details & audio'; popupButton.addEventListener('click', () => window.appSelectNode(node.id));
+    popupContent.append(pill, popupTitle, popupYear, popupSummary, popupButton);
 
     marker.bindPopup(popupContent, { maxWidth: 300 });
 
@@ -331,11 +349,11 @@ function updateQuickCard(node) {
 
   document.getElementById('quickStepCount').textContent = `Node ${node.step} of ${state.filteredNodes.length}`;
   document.getElementById('quickTitle').textContent = node.title;
-  document.getElementById('quickMeta').innerHTML = `
-    <span>📍 ${node.location}</span>
-    <span>•</span>
-    <span>${node.year}</span>
-  `;
+  const quickMeta = document.getElementById('quickMeta');
+  const location = document.createElement('span'); location.textContent = `📍 ${node.location}`;
+  const separator = document.createElement('span'); separator.textContent = '•';
+  const year = document.createElement('span'); year.textContent = node.year;
+  quickMeta.replaceChildren(location, separator, year);
   document.getElementById('quickSummary').textContent = node.summary;
 }
 
@@ -769,18 +787,11 @@ function renderEditorTable() {
 
   state.nodes.forEach(node => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${node.step}</strong></td>
-      <td><span class="religion-pill ${node.religion}">${node.religionName || node.religion}</span></td>
-      <td><strong>${node.title}</strong></td>
-      <td>${node.location}</td>
-      <td>${node.year}</td>
-      <td style="font-family:monospace; font-size:0.75rem;">${node.lat.toFixed(3)}, ${node.lng.toFixed(3)}</td>
-      <td>
-        <button class="table-action-btn" onclick="window.editNodeForm('${node.id}')">✏️ Edit</button>
-        <button class="table-action-btn delete" onclick="window.deleteNode('${node.id}')">🗑️ Delete</button>
-      </td>
-    `;
+    const addCell = (text, strong = false) => { const td=document.createElement('td'); const child=strong?document.createElement('strong'):td; child.textContent=text; if(strong)td.append(child); tr.append(td); };
+    addCell(String(node.step), true);
+    const faithCell=document.createElement('td'); const faith=document.createElement('span'); faith.className=`religion-pill ${node.religion}`; faith.textContent=node.religionName||node.religion; faithCell.append(faith); tr.append(faithCell);
+    addCell(node.title, true); addCell(node.location); addCell(node.year); addCell(`${Number(node.lat).toFixed(3)}, ${Number(node.lng).toFixed(3)}`);
+    const actions=document.createElement('td'); const edit=document.createElement('button'); edit.className='table-action-btn'; edit.textContent='✏️ Edit'; edit.addEventListener('click',()=>window.editNodeForm(node.id)); const remove=document.createElement('button'); remove.className='table-action-btn delete'; remove.textContent='🗑️ Delete'; remove.addEventListener('click',()=>window.deleteNode(node.id)); actions.append(edit,remove); tr.append(actions);
     tbody.appendChild(tr);
   });
 }
