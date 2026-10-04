@@ -38,6 +38,9 @@ const state = {
   speechUtterance: null
 };
 
+// The original prototype referenced audio files that are not present in this repository.
+const BGM_AVAILABLE = false;
+
 // Exclusive High-Definition Satellite Map Configuration (Esri World Imagery + Reference Overlay)
 const SATELLITE_CONFIG = {
   name: 'Satellite Topography (Esri World Imagery)',
@@ -59,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   initMap();
   bindUIEvents();
-  initBgmSystem();
+  if (BGM_AVAILABLE) initBgmSystem();
   renderTimelineEras();
   applyReligionFilter('all');
   
@@ -330,7 +333,7 @@ function selectNode(node, panTo = true) {
   updateDrawerContent(node);
 
   // Sync BGM Soundscape to the active node's faith tradition (if in Auto mode)
-  if (state.bgmMode === 'auto') {
+  if (BGM_AVAILABLE && state.bgmMode === 'auto') {
     updateBgmTrack(node.religion, false);
   }
 
